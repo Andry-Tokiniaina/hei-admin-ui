@@ -26,13 +26,8 @@ describe("Fees-only mode", () => {
       }).as("getFees");
 
       cy.visit("/fees");
-
-      cy.wait("@getFees")
-        .its("response.statusCode")
-        .should("eq", 200);
-
-      cy.get('[data-testid="fees-table"]')
-        .should("be.visible");
+      cy.wait("@getFees").its("response.statusCode").should("eq", 200);
+      cy.get('[data-testid="fees-table"]').should("be.visible");
     });
 
     it("blocks access to restricted features", () => {
@@ -42,25 +37,66 @@ describe("Fees-only mode", () => {
           error: "Bad Request: feature disabled in fees-only mode",
         },
       }).as("getTeachers");
-
       cy.visit("/teachers");
-
-      cy.wait("@getTeachers")
-        .its("response.statusCode")
-        .should("eq", 400);
-
-      cy.get('[data-testid="error-message"]')
-        .should("be.visible");
-
-      cy.get('[data-testid="teachers-table"]')
-        .should("not.exist");
+      cy.wait("@getTeachers").its("response.statusCode").should("eq", 400);
+      cy.get('[data-testid="error-message"]').should("be.visible");
+      cy.get('[data-testid="teachers-table"]').should("not.exist");
     });
 
     it("prevents direct navigation to restricted routes", () => {
       cy.visit("/teachers");
+      cy.url().should("not.include", "/teachers");
+    });
+  });
 
-      cy.url()
-        .should("not.include", "/teachers");
+  describe("when fees-only mode is disabled", () => {
+    beforeEach(() => {
+      cy.intercept("GET", "**/whoami", {
+        statusCode: 200,
+        body: {
+          feesOnly: false,
+          email: "test.user@mail.com",
+          role: "school-admin",
+        },
+      }).as("whoami");
+
+      cy.login("test.user@mail.com");
+      cy.visit("/");
+      cy.wait("@whoami");
+    });
+
+    it("shows the full navigation", () => {
+      cy.get('[data-testid="sidebar"]').should("be.visible");
+    });
+
+    it("allows access to the fees page", () => {
+      cy.intercept("GET", "**/fees*", {
+        statusCode: 200,
+        body: [],
+      }).as("getFees");
+      cy.visit("/fees");
+      cy.wait("@getFees").its("response.statusCode").should("eq", 200);
+      cy.get('[data-testid="fees-table"]').should("be.visible");
+    });
+
+    it("allows access to previously restricted features", () => {
+      cy.intercept("GET", "**/teachers*", {
+        statusCode: 200,
+        body: [],
+      }).as("getTeachers");
+
+      cy.visit("/teachers");
+
+      cy.wait("@getTeachers").its("response.statusCode").should("eq", 200);
+
+      cy.get('[data-testid="teachers-table"]').should("be.visible");
+
+      cy.get('[data-testid="error-message"]').should("not.exist");
+    });
+
+    it("allows direct navigation to previously restricted routes", () => {
+      cy.visit("/teachers");
+      cy.url().should("include", "/teachers");
     });
   });
 });
