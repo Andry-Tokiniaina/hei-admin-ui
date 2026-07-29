@@ -26,7 +26,9 @@ describe("Fees-only mode", () => {
       }).as("getFees");
 
       cy.visit("/fees");
+
       cy.wait("@getFees").its("response.statusCode").should("eq", 200);
+
       cy.get('[data-testid="fees-table"]').should("be.visible");
     });
 
@@ -37,14 +39,19 @@ describe("Fees-only mode", () => {
           error: "Bad Request: feature disabled in fees-only mode",
         },
       }).as("getTeachers");
+
       cy.visit("/teachers");
+
       cy.wait("@getTeachers").its("response.statusCode").should("eq", 400);
+
       cy.get('[data-testid="error-message"]').should("be.visible");
+
       cy.get('[data-testid="teachers-table"]').should("not.exist");
     });
 
     it("prevents direct navigation to restricted routes", () => {
       cy.visit("/teachers");
+
       cy.url().should("not.include", "/teachers");
     });
   });
@@ -74,8 +81,11 @@ describe("Fees-only mode", () => {
         statusCode: 200,
         body: [],
       }).as("getFees");
+
       cy.visit("/fees");
+
       cy.wait("@getFees").its("response.statusCode").should("eq", 200);
+
       cy.get('[data-testid="fees-table"]').should("be.visible");
     });
 
@@ -96,6 +106,7 @@ describe("Fees-only mode", () => {
 
     it("allows direct navigation to previously restricted routes", () => {
       cy.visit("/teachers");
+
       cy.url().should("include", "/teachers");
     });
   });
